@@ -1,5 +1,4 @@
 altair==5.4.1
-numpy==2.1.1
 pandas==2.2.2
 plotly==5.20.0
 scikit_learn==1.4.0
