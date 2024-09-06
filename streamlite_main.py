@@ -32,7 +32,7 @@ alt.themes.enable("dark")
 
 # Title of dashboard
 st.title("Prediction Dashboard")
-
+z = "AAPL_stock_data.csv"
 with st.sidebar:
     st.title('📈 Dashboard-Prediction Use LSTM')
 
@@ -53,7 +53,7 @@ def trigger_refresh(seconds):
 
 def prediction(uploaded_file, selected_model, n_day, sample):
     if uploaded_file is not None:
-        df = load_data(uploaded_file)
+        df = load_data(z)
         data = df.filter(['Close'])
         dataset = data.values
 
