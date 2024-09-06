@@ -4,7 +4,6 @@ import plotly.graph_objs as go
 import numpy as np
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
-import altair as alt
 import base64
 import time
 
@@ -32,7 +31,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-alt.themes.enable("dark")
+# Auto-refresh setiap 30 detik
+st_autorefresh(interval=30 * 1000, key="datarefresh")
 
 # Judul halaman dashboard
 st.title("Prediction Dashboard")
