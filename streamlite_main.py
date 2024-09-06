@@ -46,8 +46,10 @@ with st.sidebar:
     sample = st.slider("Sample :", 1, 30)
     check_box = st.checkbox(label="Display Table of Prediction")
 
-# Set the auto-refresh time to 30 seconds
-st_autorefresh(interval=30*1000)  # 30 seconds
+# Function to trigger refresh after a certain interval
+def trigger_refresh(seconds):
+    time.sleep(seconds)  # Wait for the specified number of seconds
+    st.experimental_rerun()  # Refresh the page
 
 def prediction(uploaded_file, selected_model, n_day, sample):
     if uploaded_file is not None:
@@ -146,3 +148,6 @@ def prediction(uploaded_file, selected_model, n_day, sample):
 
 # Call prediction function
 prediction(uploaded_file, selected_model, n_day, sample)
+
+# Set auto-refresh for every 30 seconds
+trigger_refresh(30)
