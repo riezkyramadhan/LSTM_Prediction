@@ -31,9 +31,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Auto-refresh setiap 30 detik
-st_autorefresh(interval=30 * 1000, key="datarefresh")
-
 # Judul halaman dashboard
 st.title("Prediction Dashboard")
 
@@ -147,3 +144,7 @@ def prediction(uploaded_file, selected_model, n_day, sample):
 
 # Panggil fungsi prediksi
 prediction(uploaded_file, selected_model, n_day, sample)
+
+# Tunggu 30 detik dan rerun
+time.sleep(30)
+st.experimental_rerun()
