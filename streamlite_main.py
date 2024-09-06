@@ -37,7 +37,7 @@ with st.sidebar:
     
     uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=['csv', 'xlsx'])
     # Model selection
-    model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5']  # Ganti dengan nama model Anda
+    model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']  # Ganti dengan nama model Anda
     selected_model = st.selectbox("Select a model", model_options)
 
     n_day = st.slider("Days of prediction :", 1, 30)
