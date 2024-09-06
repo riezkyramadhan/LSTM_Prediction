@@ -1,21 +1,22 @@
 import streamlit as st
 import pandas as pd
-import os
 import plotly.graph_objs as go
+import numpy as np
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
-import numpy as np
 import altair as alt
 import base64
 
-# Function to load CSV data from a file path
-def load_data(filepath):
-    """Function for loading data from CSV"""
-    df = pd.read_csv(filepath, index_col="Date")
+def load_data(file):
+    """Function for loading data"""
+    if file.name.endswith('.csv'):
+        df = pd.read_csv(file, index_col="Date")
+    elif file.name.endswith('.xlsx'):
+        df = pd.read_excel(file, index_col="Date")
     return df
 
 def get_table_download_link(df):
-    csv = df.to_csv(index=True)
+    csv = df.to_csv(index=True)  # Ensure index (Date) is included in the output file
     b64 = base64.b64encode(csv.encode()).decode()
     href = f'<a href="data:file/csv;base64,{b64}" download="updated_data.csv">Download updated CSV file</a>'
     return href
@@ -24,27 +25,17 @@ st.set_page_config(
     page_title="Dashboard-Prediction Use LSTM",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="expanded"
-)
+    initial_sidebar_state="expanded")
 
 alt.themes.enable("dark")
 
 # Title of dashboard
 st.title("Prediction Dashboard")
 
-# Sidebar for model selection and file input
 with st.sidebar:
     st.title('📈 Dashboard-Prediction Use LSTM')
-
-    # Folder containing CSV files
-    folder_path = "./data"  # Change this to the folder where CSVs are stored
-
-    # List all CSV files in the folder
-    csv_files = [f for f in os.listdir(folder_path) if f.endswith('.csv')]
-
-    # Selectbox for choosing a CSV file
-    selected_file = st.selectbox("Select a CSV file", csv_files)
-
+    
+    uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=['csv', 'xlsx'])
     # Model selection
     model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']  # Replace with your model names
     selected_model = st.selectbox("Select a model", model_options)
@@ -53,11 +44,9 @@ with st.sidebar:
     sample = st.slider("Sample :", 1, 30)
     check_box = st.checkbox(label="Display Table of Prediction")
 
-# Prediction function
-def prediction(filepath, selected_model, n_day, sample):
-    if filepath is not None:
-        # Load selected CSV file
-        df = load_data(os.path.join(folder_path, filepath))
+def prediction(uploaded_file, selected_model, n_day, sample):
+    if uploaded_file is not None:
+        df = load_data(uploaded_file)
         data = df.filter(['Close'])
         dataset = data.values
 
@@ -144,8 +133,7 @@ def prediction(filepath, selected_model, n_day, sample):
             st.markdown(get_table_download_link(valid), unsafe_allow_html=True)
         else:
             st.dataframe(df, width=1000, height=500)
-            st.markdown(get_table_download_link(df), unsafe_allow_html=True)
+            st.markdown(get_table_download_link(df), unsafe_allow_html=True) 
 
 # Call prediction function
-prediction(selected_file, selected_model, n_day, sample)
-
+prediction(uploaded_file, selected_model, n_day, sample)
