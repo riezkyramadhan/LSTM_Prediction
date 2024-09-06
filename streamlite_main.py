@@ -8,11 +8,13 @@ import altair as alt
 import base64
 import time
 
-# Fungsi untuk memuat data
-def load_data():
-    file_path = "./AAPL_stock_data.csv"  # Lokasi file CSV
-    df = pd.read_csv(file_path, index_col="Date")  # Muat file CSV
-    return df
+# Fungsi untuk memuat data dari file yang diunggah
+def load_data(uploaded_file):
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file, index_col="Date")  # Muat file CSV yang diunggah
+        return df
+    else:
+        return None
 
 # Fungsi untuk memberikan link download file CSV
 def get_table_download_link(df):
@@ -34,20 +36,29 @@ alt.themes.enable("dark")
 # Judul halaman dashboard
 st.title("Prediction Dashboard")
 
+# Bagian sidebar
 with st.sidebar:
     st.title('📈 Dashboard-Prediction Use LSTM')
+
+    # Opsi untuk mengunggah file CSV
+    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
     # Model selection
     model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']  # Replace with your model names
     selected_model = st.selectbox("Select a model", model_options)
 
+    # Slider untuk pengaturan
     n_day = st.slider("Days of prediction :", 1, 30)
     sample = st.slider("Sample :", 1, 30)
     check_box = st.checkbox(label="Display Table of Prediction")
 
 # Fungsi untuk melakukan prediksi
-def prediction(selected_model, n_day, sample):
-    df = load_data()
+def prediction(uploaded_file, selected_model, n_day, sample):
+    df = load_data(uploaded_file)
+    if df is None:
+        st.warning("Please upload a CSV file.")
+        return
+
     data = df.filter(['Close'])
     dataset = data.values
 
@@ -134,4 +145,4 @@ def prediction(selected_model, n_day, sample):
         st.markdown(get_table_download_link(df), unsafe_allow_html=True)
 
 # Panggil fungsi prediksi
-prediction(selected_model, n_day, sample)
+prediction(uploaded_file, selected_model, n_day, sample)
