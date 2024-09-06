@@ -12,6 +12,7 @@ import time
 def load_data(uploaded_file):
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file, index_col="Date")  # Muat file CSV yang diunggah
+        df.index = pd.to_datetime(df.index)  # Konversi index ke datetime
         return df
     else:
         return None
