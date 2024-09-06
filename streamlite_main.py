@@ -1,55 +1,63 @@
 import streamlit as st
 import pandas as pd
+import os
 import plotly.graph_objs as go
-import numpy as np
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
+import numpy as np
 import altair as alt
 import base64
 
-def load_data(file):
-    """Function for loading data"""
-    if file.name.endswith('.csv'):
-        df = pd.read_csv(file, index_col="Date", parse_dates=True)
-    elif file.name.endswith('.xlsx'):
-        df = pd.read_excel(file, index_col="Date", parse_dates=True)
+# Function to load CSV data from a file path
+def load_data(filepath):
+    """Function for loading data from CSV"""
+    df = pd.read_csv(filepath, index_col="Date")
     return df
 
-def save_updated_data(df, filename='updated_data.xlsx'):
-    """Save the updated DataFrame with predictions into an Excel file"""
-    df.to_excel(filename)
-
 def get_table_download_link(df):
-    csv = df.to_csv(index=False)
+    csv = df.to_csv(index=True)
     b64 = base64.b64encode(csv.encode()).decode()
-    href = f'<a href="data:file/csv;base64,{b64}" download="data.csv">Download csv file</a>'
+    href = f'<a href="data:file/csv;base64,{b64}" download="updated_data.csv">Download updated CSV file</a>'
     return href
 
 st.set_page_config(
     page_title="Dashboard-Prediction Use LSTM",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="expanded")
+    initial_sidebar_state="expanded"
+)
 
 alt.themes.enable("dark")
 
 # Title of dashboard
 st.title("Prediction Dashboard")
 
+# Sidebar for model selection and file input
 with st.sidebar:
     st.title('📈 Dashboard-Prediction Use LSTM')
-    
-    uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=['csv', 'xlsx'])
-    model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']
+
+    # Folder containing CSV files
+    folder_path = "./data"  # Change this to the folder where CSVs are stored
+
+    # List all CSV files in the folder
+    csv_files = [f for f in os.listdir(folder_path) if f.endswith('.csv')]
+
+    # Selectbox for choosing a CSV file
+    selected_file = st.selectbox("Select a CSV file", csv_files)
+
+    # Model selection
+    model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']  # Replace with your model names
     selected_model = st.selectbox("Select a model", model_options)
 
     n_day = st.slider("Days of prediction :", 1, 30)
     sample = st.slider("Sample :", 1, 30)
     check_box = st.checkbox(label="Display Table of Prediction")
 
-def prediction(uploaded_file, selected_model, n_day, sample):
-    if uploaded_file is not None:
-        df = load_data(uploaded_file)
+# Prediction function
+def prediction(filepath, selected_model, n_day, sample):
+    if filepath is not None:
+        # Load selected CSV file
+        df = load_data(os.path.join(folder_path, filepath))
         data = df.filter(['Close'])
         dataset = data.values
 
@@ -85,9 +93,9 @@ def prediction(uploaded_file, selected_model, n_day, sample):
         valid['Predictions'] = predictions
 
         # Continue predicting for the future based on the predictions
-        last_60_days = scaled_data[-60:]  # Get the last 60 days of data
+        last_60_days = scaled_data[-60:]
         for day in range(n_day):
-            x_future = np.array([last_60_days])  # Use the last 60 days to predict
+            x_future = np.array([last_60_days])
             x_future = np.reshape(x_future, (x_future.shape[0], x_future.shape[1], 1))
 
             # Make prediction for the next day
@@ -99,9 +107,13 @@ def prediction(uploaded_file, selected_model, n_day, sample):
             valid.loc[next_date] = [np.nan, predicted_value[0][0]]  # Append predicted value
 
             # Update last_60_days with the newly predicted value
-            last_60_days = np.append(last_60_days[1:], predicted_value, axis=0)
+            new_value_scaled = scaler.transform(predicted_value)
+            last_60_days = np.append(last_60_days[1:], new_value_scaled, axis=0)  # Shift window
 
-        # Plotting the results
+        # Append the new predictions to the original dataframe
+        df = df.append(valid[['Predictions']])
+
+        # Plot the results
         fig = go.Figure()
 
         # Plot train data
@@ -117,7 +129,7 @@ def prediction(uploaded_file, selected_model, n_day, sample):
         fig.update_layout(title='Stock Price Prediction',
                         width=1000,
                         height=500,
-                        margin=dict(l=20, r=20, t=40, b=20),
+                        margin=dict(l=20, r=20, t=40, b=20),  # left, right, top, bottom
                         font=dict(family="Courier New, monospace", size=18, color="RebeccaPurple"),
                         xaxis_title='Date',
                         yaxis_title='Value',
@@ -126,10 +138,7 @@ def prediction(uploaded_file, selected_model, n_day, sample):
         # Display plot in Streamlit
         st.plotly_chart(fig)
 
-        # Save the updated data
-        save_updated_data(valid, 'updated_data.xlsx')
-
-        # Display the table of data with predictions
+        # Display the updated table
         if check_box:
             st.dataframe(valid)
             st.markdown(get_table_download_link(valid), unsafe_allow_html=True)
@@ -138,4 +147,5 @@ def prediction(uploaded_file, selected_model, n_day, sample):
             st.markdown(get_table_download_link(df), unsafe_allow_html=True)
 
 # Call prediction function
-prediction(uploaded_file, selected_model, n_day, sample)
+prediction(selected_file, selected_model, n_day, sample)
+
