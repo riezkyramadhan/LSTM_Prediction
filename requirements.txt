@@ -3,7 +3,7 @@ pandas
 plotly==5.20.0
 scikit_learn==1.4.0
 numpy
-streamlit==0.52.1
+streamlit==1.38.0
 pillow
 keras
 tensorflow==2.16.1
