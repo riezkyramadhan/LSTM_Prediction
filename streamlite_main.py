@@ -1,55 +1,3 @@
-import streamlit as st
-import pandas as pd
-import plotly.graph_objs as go
-import numpy as np
-from tensorflow.keras.models import load_model
-from sklearn.preprocessing import MinMaxScaler
-import altair as alt
-import base64
-import os
-
-# Function to load CSV data from the same directory as the script
-def load_data(file_name):
-    """Function for loading data from file in the same directory"""
-    if file_name.endswith('.csv'):
-        df = pd.read_csv(file_name, index_col="Date")
-    elif file_name.endswith('.xlsx'):
-        df = pd.read_excel(file_name, index_col="Date")
-    return df
-
-def get_table_download_link(df):
-    """Generate a download link for the updated dataframe"""
-    csv = df.to_csv(index=True)  # Ensure index (Date) is included in the output file
-    b64 = base64.b64encode(csv.encode()).decode()
-    href = f'<a href="data:file/csv;base64,{b64}" download="updated_data.csv">Download updated CSV file</a>'
-    return href
-
-st.set_page_config(
-    page_title="Dashboard-Prediction Use LSTM",
-    page_icon="📈",
-    layout="wide",
-    initial_sidebar_state="expanded")
-
-alt.themes.enable("dark")
-
-# Title of dashboard
-st.title("Prediction Dashboard")
-
-with st.sidebar:
-    st.title('📈 Dashboard-Prediction Use LSTM')
-
-    # Pilih file dari daftar yang ada di directory yang sama
-    file_options = ['AAPL_stock_data.csv']  # Sesuaikan dengan file yang ada
-    uploaded_file = st.selectbox("Select a file", file_options)
-
-    # Model selection
-    model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']  # Replace with your model names
-    selected_model = st.selectbox("Select a model", model_options)
-
-    n_day = st.slider("Days of prediction :", 1, 30)
-    sample = st.slider("Sample :", 1, 30)
-    check_box = st.checkbox(label="Display Table of Prediction")
-
 def prediction(uploaded_file, selected_model, n_day, sample):
     if uploaded_file is not None:
         # Langsung akses file di directory yang sama
@@ -87,6 +35,10 @@ def prediction(uploaded_file, selected_model, n_day, sample):
         train = data[:training_data_len]
         valid = data[training_data_len:].copy()
         valid['Predictions'] = predictions
+
+        # Convert the index of valid to DatetimeIndex if not already
+        if not isinstance(valid.index, pd.DatetimeIndex):
+            valid.index = pd.to_datetime(valid.index)
 
         # Continue predicting for the future based on the predictions
         last_60_days = scaled_data[-60:]
@@ -141,6 +93,3 @@ def prediction(uploaded_file, selected_model, n_day, sample):
         else:
             st.dataframe(df, width=1000, height=500)
             st.markdown(get_table_download_link(df), unsafe_allow_html=True) 
-
-# Call prediction function
-prediction(uploaded_file, selected_model, n_day, sample)
