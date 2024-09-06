@@ -1,6 +1,56 @@
+import streamlit as st
+import pandas as pd
+import plotly.graph_objs as go
+import numpy as np
+from tensorflow.keras.models import load_model
+from sklearn.preprocessing import MinMaxScaler
+import altair as alt
+import base64
+import time
+
+def load_data(file):
+    """Function for loading data"""
+    if file.name.endswith('.csv'):
+        df = pd.read_csv(file, index_col="Date")
+    elif file.name.endswith('.xlsx'):
+        df = pd.read_excel(file, index_col="Date")
+    return df
+
+def get_table_download_link(df):
+    csv = df.to_csv(index=True)  # Ensure index (Date) is included in the output file
+    b64 = base64.b64encode(csv.encode()).decode()
+    href = f'<a href="data:file/csv;base64,{b64}" download="updated_data.csv">Download updated CSV file</a>'
+    return href
+
+st.set_page_config(
+    page_title="Dashboard-Prediction Use LSTM",
+    page_icon="📈",
+    layout="wide",
+    initial_sidebar_state="expanded")
+
+alt.themes.enable("dark")
+
+# Title of dashboard
+st.title("Prediction Dashboard")
+
+with st.sidebar:
+    st.title('📈 Dashboard-Prediction Use LSTM')
+
+    file_options = ['AAPL_stock_data.csv']
+    uploaded_file = st.selectbox("Select a file", file_options)
+    # Model selection
+    model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']  # Replace with your model names
+    selected_model = st.selectbox("Select a model", model_options)
+
+    n_day = st.slider("Days of prediction :", 1, 30)
+    sample = st.slider("Sample :", 1, 30)
+    check_box = st.checkbox(label="Display Table of Prediction")
+
+# Set the auto-refresh time to 30 seconds
+st_autorefresh(interval=30*1000)  # 30 seconds
+
 def prediction(uploaded_file, selected_model, n_day, sample):
     if uploaded_file is not None:
-        # Langsung akses file di directory yang sama
         df = load_data(uploaded_file)
         data = df.filter(['Close'])
         dataset = data.values
@@ -92,4 +142,7 @@ def prediction(uploaded_file, selected_model, n_day, sample):
             st.markdown(get_table_download_link(valid), unsafe_allow_html=True)
         else:
             st.dataframe(df, width=1000, height=500)
-            st.markdown(get_table_download_link(df), unsafe_allow_html=True) 
+            st.markdown(get_table_download_link(df), unsafe_allow_html=True)
+
+# Call prediction function
+prediction(uploaded_file, selected_model, n_day, sample)
