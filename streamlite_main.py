@@ -59,7 +59,7 @@ def prediction(uploaded_file, selected_model, n_day, sample):
         training_data_len = int(np.ceil(len(dataset) * .95))
 
         # Load model
-        model = load_model(selected_model)
+        model = tf.keras.models.load_model('path_to_model')
 
         test_data = scaled_data[training_data_len - 60:, :]
 
