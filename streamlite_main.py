@@ -10,10 +10,14 @@ import base64
 def load_data(file):
     """Function for loading data"""
     if file.name.endswith('.csv'):
-        df = pd.read_csv(file, index_col="Date")
+        df = pd.read_csv(file, index_col="Date", parse_dates=True)
     elif file.name.endswith('.xlsx'):
-        df = pd.read_excel(file, index_col="Date")
+        df = pd.read_excel(file, index_col="Date", parse_dates=True)
     return df
+
+def save_updated_data(df, filename='updated_data.xlsx'):
+    """Save the updated DataFrame with predictions into an Excel file"""
+    df.to_excel(filename)
 
 def get_table_download_link(df):
     csv = df.to_csv(index=False)
@@ -36,8 +40,7 @@ with st.sidebar:
     st.title('📈 Dashboard-Prediction Use LSTM')
     
     uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=['csv', 'xlsx'])
-    # Model selection
-    model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']  # Ganti dengan nama model Anda
+    model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']
     selected_model = st.selectbox("Select a model", model_options)
 
     n_day = st.slider("Days of prediction :", 1, 30)
@@ -81,6 +84,24 @@ def prediction(uploaded_file, selected_model, n_day, sample):
         valid = data[training_data_len:].copy()
         valid['Predictions'] = predictions
 
+        # Continue predicting for the future based on the predictions
+        last_60_days = scaled_data[-60:]  # Get the last 60 days of data
+        for day in range(n_day):
+            x_future = np.array([last_60_days])  # Use the last 60 days to predict
+            x_future = np.reshape(x_future, (x_future.shape[0], x_future.shape[1], 1))
+
+            # Make prediction for the next day
+            predicted_value = model.predict(x_future)
+            predicted_value = scaler.inverse_transform(predicted_value)
+
+            # Append this value to the valid dataset as a future prediction
+            next_date = valid.index[-1] + pd.DateOffset(1)  # Increment date by 1
+            valid.loc[next_date] = [np.nan, predicted_value[0][0]]  # Append predicted value
+
+            # Update last_60_days with the newly predicted value
+            last_60_days = np.append(last_60_days[1:], predicted_value, axis=0)
+
+        # Plotting the results
         fig = go.Figure()
 
         # Plot train data
@@ -96,7 +117,7 @@ def prediction(uploaded_file, selected_model, n_day, sample):
         fig.update_layout(title='Stock Price Prediction',
                         width=1000,
                         height=500,
-                        margin=dict(l=20, r=20, t=40, b=20), #left, right, top, bottom
+                        margin=dict(l=20, r=20, t=40, b=20),
                         font=dict(family="Courier New, monospace", size=18, color="RebeccaPurple"),
                         xaxis_title='Date',
                         yaxis_title='Value',
@@ -105,13 +126,16 @@ def prediction(uploaded_file, selected_model, n_day, sample):
         # Display plot in Streamlit
         st.plotly_chart(fig)
 
-        # Display the chart
+        # Save the updated data
+        save_updated_data(valid, 'updated_data.xlsx')
+
+        # Display the table of data with predictions
         if check_box:
             st.dataframe(valid)
-            st.markdown(get_table_download_link(valid), unsafe_allow_html=True) 
+            st.markdown(get_table_download_link(valid), unsafe_allow_html=True)
         else:
             st.dataframe(df, width=1000, height=500)
-            st.markdown(get_table_download_link(df), unsafe_allow_html=True) 
+            st.markdown(get_table_download_link(df), unsafe_allow_html=True)
 
 # Call prediction function
 prediction(uploaded_file, selected_model, n_day, sample)
