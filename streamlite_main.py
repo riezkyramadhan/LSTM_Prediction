@@ -6,6 +6,7 @@ from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 import altair as alt
 import base64
+import tempfile
 
 def load_data(file):
     """Function for loading data"""
@@ -33,21 +34,19 @@ alt.themes.enable("dark")
 # Title of dashboard
 st.title("Prediction Dashboard")
 
-
 with st.sidebar:
     st.title('📈 Dashboard-Prediction Use LSTM')
     
     uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=['csv', 'xlsx'])
-    # Model selection
-    model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5']  # Ganti dengan nama model Anda
-    selected_model = st.selectbox("Select a model", model_options)
-
+    # Model upload
+    uploaded_model = st.file_uploader("Upload a .h5 model file", type=['h5'])
+    
     n_day = st.slider("Days of prediction :", 1, 30)
     sample = st.slider("Sample :", 1, 30)
     check_box = st.sidebar.checkbox(label="Display Table of Prediction")
 
-def prediction(uploaded_file, selected_model, n_day, sample):
-    if uploaded_file is not None:
+def prediction(uploaded_file, uploaded_model, n_day, sample):
+    if uploaded_file is not None and uploaded_model is not None:
         df = load_data(uploaded_file)
         data = df.filter(['Close'])
         dataset = data.values
@@ -58,8 +57,10 @@ def prediction(uploaded_file, selected_model, n_day, sample):
         # Get the number of rows to train the model on
         training_data_len = int(np.ceil(len(dataset) * .95))
 
-        # Load model
-        model = load_model(selected_model)
+        # Load model from uploaded file
+        with tempfile.NamedTemporaryFile(delete=False) as temp_model_file:
+            temp_model_file.write(uploaded_model.read())
+            model = load_model(temp_model_file.name)
 
         test_data = scaled_data[training_data_len - 60:, :]
 
@@ -115,4 +116,4 @@ def prediction(uploaded_file, selected_model, n_day, sample):
             st.dataframe(df, width=1000, height=500)
             st.markdown(get_table_download_link(df), unsafe_allow_html=True) 
 
-prediction(uploaded_file, selected_model, n_day, sample)
+prediction(uploaded_file, uploaded_model, n_day, sample)
