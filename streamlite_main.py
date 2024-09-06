@@ -36,7 +36,7 @@ with st.sidebar:
     st.title('📈 Dashboard-Prediction Use LSTM')
 
     file_options = ['AAPL_stock_data.csv']
-    uploaded_file = st.selectbox("Select a file", file_options))
+    uploaded_file = st.selectbox("Select a file", file_options)
     # Model selection
     model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']  # Replace with your model names
     selected_model = st.selectbox("Select a model", model_options)
