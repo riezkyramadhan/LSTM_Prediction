@@ -2,7 +2,7 @@ altair==5.4.1
 pandas==2.2.2
 plotly==5.20.0
 scikit_learn==1.4.0
-numpy==1.16.4
+numpy
 streamlit==0.52.1
 pillow
 keras
