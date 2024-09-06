@@ -6,16 +6,19 @@ from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 import altair as alt
 import base64
+import os
 
-def load_data(file):
-    """Function for loading data"""
-    if file.name.endswith('.csv'):
-        df = pd.read_csv(file, index_col="Date")
-    elif file.name.endswith('.xlsx'):
-        df = pd.read_excel(file, index_col="Date")
+# Function to load CSV data from the same directory as the script
+def load_data(file_name):
+    """Function for loading data from file in the same directory"""
+    if file_name.endswith('.csv'):
+        df = pd.read_csv(file_name, index_col="Date")
+    elif file_name.endswith('.xlsx'):
+        df = pd.read_excel(file_name, index_col="Date")
     return df
 
 def get_table_download_link(df):
+    """Generate a download link for the updated dataframe"""
     csv = df.to_csv(index=True)  # Ensure index (Date) is included in the output file
     b64 = base64.b64encode(csv.encode()).decode()
     href = f'<a href="data:file/csv;base64,{b64}" download="updated_data.csv">Download updated CSV file</a>'
@@ -35,8 +38,10 @@ st.title("Prediction Dashboard")
 with st.sidebar:
     st.title('📈 Dashboard-Prediction Use LSTM')
 
-    file_options = ['AAPL_stock_data.csv']
+    # Pilih file dari daftar yang ada di directory yang sama
+    file_options = ['AAPL_stock_data.csv']  # Sesuaikan dengan file yang ada
     uploaded_file = st.selectbox("Select a file", file_options)
+
     # Model selection
     model_options = ['stokUsD4.h5', 'stokUsD2.h5', 'stokUsD1.h5', 'stoknew.h5']  # Replace with your model names
     selected_model = st.selectbox("Select a model", model_options)
@@ -47,6 +52,7 @@ with st.sidebar:
 
 def prediction(uploaded_file, selected_model, n_day, sample):
     if uploaded_file is not None:
+        # Langsung akses file di directory yang sama
         df = load_data(uploaded_file)
         data = df.filter(['Close'])
         dataset = data.values
